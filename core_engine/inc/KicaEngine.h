@@ -1,11 +1,13 @@
 #pragma once
 
-#include "KicaState.h"
-#include "KicaTimer.h"
+#include "KicaDS.h"
 #include "RewireStrategies.h"
 #include <vector>
 #include <memory>
 
+namespace KiCA
+{
+    
 class KicaEngine {
 public:
     // 构造函数：必须注入一个重组策略
@@ -22,3 +24,6 @@ private:
     // 引擎持有的重组策略
     std::shared_ptr<IRewireStrategy> rewire_strategy;
 };
+
+
+}

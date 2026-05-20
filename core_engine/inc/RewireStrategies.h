@@ -1,10 +1,14 @@
 #pragma once
 
-#include "KicaState.h"
+#include "KicaDS.h"
 #include <vector>
 
 #include <random>
 
+
+namespace KiCA
+{
+    
 // 拓扑重组策略的纯虚基类 (Interface)
 class IRewireStrategy {
 public:
@@ -25,3 +29,6 @@ public:
 private:
     std::mt19937 rng; // 策略内部维护自己的随机数状态
 };
+
+
+}

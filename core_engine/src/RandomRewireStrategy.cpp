@@ -2,6 +2,9 @@
 #include <algorithm>
 #include <random>
 
+namespace KiCA
+{
+    
 RandomRewireStrategy::RandomRewireStrategy() {
     std::random_device rd;
     rng.seed(rd());
@@ -12,7 +15,7 @@ void RandomRewireStrategy::rewire(KicaState& state, const std::vector<Edge>& bro
 
     std::vector<Edge> pool = broken_edges;
     
-    // 打乱断裂边的顺序
+    // 打乱断裂边的顺序 (假设 rng 是类成员变量)
     std::shuffle(pool.begin(), pool.end(), rng);
 
     size_t i = 0;
@@ -20,9 +23,10 @@ void RandomRewireStrategy::rewire(KicaState& state, const std::vector<Edge>& bro
         const Edge& e1 = pool[i];
         const Edge& e2 = pool[i+1];
 
-        // 交叉重连：e1.a 连 e2.b，e2.a 连 e1.b
-        state.Edges.push_back({e1.a, e2.b});
-        state.Edges.push_back({e2.a, e1.b});
+        // 交叉重连：保证 u 始终来自集合 U，v 始终来自集合 V
+        // e1.u 连 e2.v，e2.u 连 e1.v
+        state.Edges.push_back({e1.u, e2.v});
+        state.Edges.push_back({e2.u, e1.v});
         
         i += 2;
     }
@@ -31,4 +35,6 @@ void RandomRewireStrategy::rewire(KicaState& state, const std::vector<Edge>& bro
     if (i < pool.size()) {
         state.Edges.push_back(pool[i]);
     }
+}
+
 }
