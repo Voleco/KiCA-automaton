@@ -6,15 +6,17 @@
 #include "KicaDS.h"
 #include "KicaEngine.h"
 #include "RewireStrategies.h"
+#include "KicaUtils.h"
 
-using KiCA::KicaEngine;
-using KiCA::KicaState;
-using KiCA::KicaTimer;
+using namespace ::KiCA;
+// using KiCA::KicaState;
+// using KiCA::KicaTimer;
 
 // 辅助函数：打印当前网络状态
-void print_state(int step, const KicaState& state, const KicaTimer& timer) {
+void print_state(int step, const KicaState &state, const KicaTimer &timer)
+{
     std::cout << "=== Step " << step << " (tau = " << state.tau << ") ===\n";
-    
+
     // // 打印节点状态 (Phi) 和 局部原时 (ProperTime)
     // std::cout << "Nodes (Phi | ProperTime): ";
     // for (int i = 0; i < state.num_nodes; ++i) {
@@ -30,8 +32,12 @@ void print_state(int step, const KicaState& state, const KicaTimer& timer) {
     // std::cout << "\n\n";
 }
 
-int main() {
+int main()
+{
     // 1. 初始化系统参数
+
+    KicaState state = KiCA::KicaUtils::generate_initial_state(
+        10, 1, 11, PhiDistribution::Gamma, KiCA::EdgeMode::PerfectMatching, 10, 1, 43);
     const int NUM_NODES = 4;
     // KicaState state(NUM_NODES);
     // KicaTimer timer(NUM_NODES);
@@ -64,7 +70,7 @@ int main() {
     // for (int step = 1; step <= NUM_STEPS; ++step) {
     //     // 执行单步演化，传入 timer 以记录局部原时
     //     engine.step(state, &timer);
-        
+
     //     // 打印演化后的状态
     //     print_state(step, state, timer);
     // }

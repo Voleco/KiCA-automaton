@@ -16,6 +16,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(kica_core STATIC
     core_engine/src/KicaEngine.cpp
     core_engine/src/RandomRewireStrategy.cpp
+    core_engine/src/KicaUtils.cpp
 )
 
 # 为库指定头文件搜索路径
