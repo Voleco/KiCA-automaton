@@ -5,7 +5,7 @@ namespace KiCA
 {
 
     KicaState KicaUtils::generate_initial_state(
-        int n, int epsilon, int num_edges,
+        int n, int epsilon,
         PhiDistribution dist_type,
         EdgeMode edge_mode,
         double param1, double param2,
@@ -19,16 +19,7 @@ namespace KiCA
         int num_u = n + epsilon;
         int num_v = n;
 
-        long long max_possible_edges = static_cast<long long>(num_u) * num_v;
-        if (num_edges > max_possible_edges)
-        {
-            throw std::invalid_argument("Requested edges exceed maximum possible edges.");
-        }
-        // 如果使用完美匹配，边数至少要能覆盖较小的集合
-        if (edge_mode == EdgeMode::PerfectMatching && num_edges < std::min(num_u, num_v))
-        {
-            throw std::invalid_argument("For PerfectMatching, num_edges must be >= min(N_U, N_V).");
-        }
+        int num_edges = num_u;
 
         KicaState state(num_u, num_v);
         std::mt19937 rng(seed);

@@ -32,7 +32,7 @@ namespace KiCA
     {
     public:
         static KicaState generate_initial_state(
-            int n, int epsilon, int num_edges,
+            int n, int epsilon,
             PhiDistribution dist_type,
             EdgeMode edge_mode,
             double param1, double param2 = 1.0,

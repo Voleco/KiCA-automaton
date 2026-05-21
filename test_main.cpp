@@ -37,8 +37,7 @@ int main()
     // 1. 初始化系统参数
 
     KicaState state = KiCA::KicaUtils::generate_initial_state(
-        10, 1, 11, PhiDistribution::Gamma, KiCA::EdgeMode::PerfectMatching, 10, 1, 43);
-    const int NUM_NODES = 4;
+        10, 1, PhiDistribution::Gamma, KiCA::EdgeMode::PerfectMatching, 10, 1, 43);
     // KicaState state(NUM_NODES);
     // KicaTimer timer(NUM_NODES);
 
