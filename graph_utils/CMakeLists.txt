@@ -1,8 +1,8 @@
 
 
 add_library(graph_utils STATIC
-    src/ConnectedComponent.cpp
-    src/DegreeAnalysis.cpp
+    src/DSU.cpp
+    src/Analyzer.cpp
 )
 
 

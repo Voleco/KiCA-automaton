@@ -3,6 +3,8 @@
 #include <unordered_set>
 #include <stdexcept>
 
+#include <iostream>
+
 namespace KiCA
 {
 
@@ -134,6 +136,7 @@ namespace KiCA
         // ---------------------------------------------------------
         // (5) 重新匹配阶段 (Topological Rewiring)
         // ---------------------------------------------------------
+        std::cout << "broken_edges count: " << broken_edges.size() << "\n";
         if (!broken_edges.empty())
         {
             // 委托给注入的策略进行处理
