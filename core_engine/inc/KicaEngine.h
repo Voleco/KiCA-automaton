@@ -12,7 +12,7 @@ namespace KiCA
     {
     public:
         // 构造函数：必须注入一个重组策略
-        explicit KicaEngine(std::shared_ptr<IRewireStrategy> strategy);
+        explicit KicaEngine(int num_u, int num_v, std::shared_ptr<IRewireStrategy> strategy);
 
         // 允许在运行时动态更换策略
         void setRewireStrategy(std::shared_ptr<IRewireStrategy> strategy);
@@ -24,6 +24,12 @@ namespace KiCA
     private:
         // 引擎持有的重组策略
         std::shared_ptr<IRewireStrategy> rewire_strategy;
+
+        // 工作内存 (Scratchpad Memory) - 属于 Engine，不属于 State
+        std::vector<int> Delta_U;
+        std::vector<int> Delta_V;
+        std::vector<int> Phi_tilde_U;
+        std::vector<int> Phi_tilde_V;
     };
 
 }

@@ -8,13 +8,18 @@
 namespace KiCA
 {
 
-    KicaEngine::KicaEngine(std::shared_ptr<IRewireStrategy> strategy)
+    KicaEngine::KicaEngine(int num_u, int num_v, std::shared_ptr<IRewireStrategy> strategy)
         : rewire_strategy(std::move(strategy))
     {
         if (!rewire_strategy)
         {
             throw std::invalid_argument("Rewire strategy cannot be null");
         }
+        // 初始化引擎的工作内存
+        Delta_U.resize(num_u, 0);
+        Delta_V.resize(num_v, 0);
+        Phi_tilde_U.resize(num_u, 0);
+        Phi_tilde_V.resize(num_v, 0);
     }
 
     void KicaEngine::setRewireStrategy(std::shared_ptr<IRewireStrategy> strategy)
@@ -28,34 +33,32 @@ namespace KiCA
 
     void KicaEngine::step(KicaState &state, KicaTimer *timer)
     {
+        // 此处不做安全检查。如果传入的 state 尺寸与 Engine 预分配的不符，那就爆炸吧
         // ---------------------------------------------------------
         // (1) 准备阶段 & (2) 判定阶段 (Direction & Synchronous Evaluation)
         // ---------------------------------------------------------
-        std::fill(state.Delta_U.begin(), state.Delta_U.end(), 0);
-        std::fill(state.Delta_V.begin(), state.Delta_V.end(), 0);
+        std::fill(Delta_U.begin(), Delta_U.begin() + state.num_u, 0);
+        std::fill(Delta_V.begin(), Delta_V.begin() + state.num_v, 0);
 
-        // 【性能优化】：将 tau 的判断提到循环外，避免百万次的分支预测开销
-        if (state.tau == 0)
+        if (state.tau == 0) // 节拍 0：因果势从 U 流向 V
         {
-            // 节拍 0：因果势从 U 流向 V
             for (const auto &edge : state.Edges)
             {
                 if (state.Phi_U[edge.u] >= state.Phi_V[edge.v])
                 {
-                    state.Delta_U[edge.u] -= 1;
-                    state.Delta_V[edge.v] += 1;
+                    Delta_U[edge.u] -= 1;
+                    Delta_V[edge.v] += 1;
                 }
             }
         }
-        else
+        else // 节拍 1：因果势从 V 流向 U
         {
-            // 节拍 1：因果势从 V 流向 U
             for (const auto &edge : state.Edges)
             {
                 if (state.Phi_V[edge.v] >= state.Phi_U[edge.u])
                 {
-                    state.Delta_V[edge.v] -= 1;
-                    state.Delta_U[edge.u] += 1;
+                    Delta_V[edge.v] -= 1;
+                    Delta_U[edge.u] += 1;
                 }
             }
         }
@@ -65,13 +68,12 @@ namespace KiCA
         // ---------------------------------------------------------
         for (int i = 0; i < state.num_u; ++i)
         {
-            state.Phi_tilde_U[i] = state.Phi_U[i] + state.Delta_U[i];
+            Phi_tilde_U[i] = state.Phi_U[i] + Delta_U[i];
         }
         for (int i = 0; i < state.num_v; ++i)
         {
-            state.Phi_tilde_V[i] = state.Phi_V[i] + state.Delta_V[i];
+            Phi_tilde_V[i] = state.Phi_V[i] + Delta_V[i];
         }
-
         // ---------------------------------------------------------
         // (4) 检测阶段 (Frustration Detection)
         // ---------------------------------------------------------
@@ -90,7 +92,8 @@ namespace KiCA
             for (const auto &edge : state.Edges)
             {
                 bool transferred = (state.Phi_U[edge.u] >= state.Phi_V[edge.v]);
-                bool reversed = (state.Phi_tilde_U[edge.u] < state.Phi_tilde_V[edge.v]);
+                // 使用引擎内部的 Phi_tilde
+                bool reversed = (Phi_tilde_U[edge.u] < Phi_tilde_V[edge.v]);
 
                 if (transferred && reversed)
                 {
@@ -112,7 +115,8 @@ namespace KiCA
             for (const auto &edge : state.Edges)
             {
                 bool transferred = (state.Phi_V[edge.v] >= state.Phi_U[edge.u]);
-                bool reversed = (state.Phi_tilde_V[edge.v] < state.Phi_tilde_U[edge.u]);
+                // 使用引擎内部的 Phi_tilde
+                bool reversed = (Phi_tilde_V[edge.v] < Phi_tilde_U[edge.u]);
 
                 if (transferred && reversed)
                 {
@@ -148,10 +152,9 @@ namespace KiCA
         // ---------------------------------------------------------
         if (timer != nullptr)
         {
-            // 注意：这里假设你的 KicaTimer 也相应地拆分为了 ProperTime_U 和 ProperTime_V
             for (int i = 0; i < state.num_u; ++i)
             {
-                bool state_event = (state.Delta_U[i] != 0);
+                bool state_event = (Delta_U[i] != 0);
                 bool topo_event = (rewired_nodes_u.find(i) != rewired_nodes_u.end());
 
                 if (state_event || topo_event)
@@ -161,7 +164,7 @@ namespace KiCA
             }
             for (int i = 0; i < state.num_v; ++i)
             {
-                bool state_event = (state.Delta_V[i] != 0);
+                bool state_event = (Delta_V[i] != 0);
                 bool topo_event = (rewired_nodes_v.find(i) != rewired_nodes_v.end());
 
                 if (state_event || topo_event)
@@ -174,8 +177,10 @@ namespace KiCA
         // ---------------------------------------------------------
         // (7) 结束阶段 (Cycle Conclusion)
         // ---------------------------------------------------------
-        state.Phi_U = state.Phi_tilde_U;
-        state.Phi_V = state.Phi_tilde_V;
+        // 这里使用 std::copy 以避免 vector 的重新分配
+        std::copy(Phi_tilde_U.begin(), Phi_tilde_U.begin() + state.num_u, state.Phi_U.begin());
+        std::copy(Phi_tilde_V.begin(), Phi_tilde_V.begin() + state.num_v, state.Phi_V.begin());
+
         state.tau = 1 - state.tau;
     }
 

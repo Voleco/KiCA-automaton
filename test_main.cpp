@@ -24,7 +24,7 @@ int main()
     KicaTimer timer(num_v + delta, num_v);
     // // 4. 实例化重组策略和引擎
     auto random_strategy = std::make_shared<RandomRewireStrategy>();
-    KicaEngine engine(random_strategy);
+    KicaEngine engine(num_v + delta, num_v, random_strategy);
 
     // std::cout << "--- Initial State ---\n";
     // print_state(0, state, timer);

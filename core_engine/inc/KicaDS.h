@@ -25,14 +25,10 @@ namespace KiCA
         int tau;   // 全局节拍 0 或 1
 
         // ================= 集合 U 的状态 =================
-        std::vector<int> Phi_U;       // 集合 U 的因果势快照
-        std::vector<int> Delta_U;     // 集合 U 的变化量缓存
-        std::vector<int> Phi_tilde_U; // 集合 U 的中间态
+        std::vector<int> Phi_U; // 集合 U 的因果势快照
 
         // ================= 集合 V 的状态 =================
-        std::vector<int> Phi_V;       // 集合 V 的因果势快照
-        std::vector<int> Delta_V;     // 集合 V 的变化量缓存
-        std::vector<int> Phi_tilde_V; // 集合 V 的中间态
+        std::vector<int> Phi_V; // 集合 V 的因果势快照
 
         // ================= 拓扑结构 =================
         std::vector<Edge> Edges; // 当前边集合
@@ -42,15 +38,11 @@ namespace KiCA
         {
             // 初始化集合 U
             Phi_U.resize(num_u, 0);
-            Delta_U.resize(num_u, 0);
-            Phi_tilde_U.resize(num_u, 0);
 
             // 初始化集合 V
             Phi_V.resize(num_v, 0);
-            Delta_V.resize(num_v, 0);
-            Phi_tilde_V.resize(num_v, 0);
 
-            Edges.resize(std::max(num_u, num_v));
+            Edges.reserve(std::max(num_u, num_v));
         }
     };
 
