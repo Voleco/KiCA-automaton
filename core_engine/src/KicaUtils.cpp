@@ -55,6 +55,20 @@ namespace KiCA
                 }
                 break;
             }
+            case PhiDistribution::Exponential:
+            {
+                // param1 作为最大截断值，限制上限 (例如传入 1000.0)
+                // param2 作为 lambda，控制衰减速度 (例如传入 0.008)
+                std::exponential_distribution<double> dist(param2);
+                int max_limit = static_cast<int>(std::round(param1));
+
+                for (int &val : phi_vec)
+                {
+                    int generated = static_cast<int>(std::round(dist(rng)));
+                    val = std::min(max_limit, generated); // 使用 param2 限制最大值
+                }
+                break;
+            }
             }
         };
 

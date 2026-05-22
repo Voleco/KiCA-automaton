@@ -16,14 +16,16 @@ int main()
 {
     // 1. 初始化系统参数
 
-    int num_v = 1000000;
-    int delta = 100000;
+    int num_v = 10000000;
+    int delta = 1000000;
     KicaState state = KiCA::KicaUtils::generate_initial_state(
-        num_v, delta, PhiDistribution::Gamma, KiCA::EdgeMode::Random, 1000, 1, 43);
+        num_v, delta, PhiDistribution::Exponential, KiCA::EdgeMode::PerfectMatching, 10000, 0.1, 43);
 
     KicaTimer timer(num_v + delta, num_v);
     // // 4. 实例化重组策略和引擎
     auto random_strategy = std::make_shared<RandomRewireStrategy>();
+    auto ordered_strategy = std::make_shared<OrderedRewireStrategy>(
+        OrderedRewireStrategy::Mode::Reversed);
     KicaEngine engine(num_v + delta, num_v, random_strategy);
 
     // std::cout << "--- Initial State ---\n";

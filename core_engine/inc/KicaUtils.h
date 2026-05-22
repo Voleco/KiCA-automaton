@@ -18,7 +18,8 @@ namespace KiCA
     {
         Normal,
         Gamma,
-        MaxwellBoltzmann
+        MaxwellBoltzmann,
+        Exponential
     };
 
     // 定义初始边的连接模式
