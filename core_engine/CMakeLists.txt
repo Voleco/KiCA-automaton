@@ -5,7 +5,7 @@ add_library(kica_core STATIC
     src/KicaUtils.cpp
 )
 
-
 target_include_directories(kica_core PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/3rdparty>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/inc>
 )

@@ -59,21 +59,59 @@ namespace KiCA
             v_nodes.push_back(edge.v);
         }
 
-        // 2. 对 U 集合的断裂节点，按照 Phi_U 从大到小降序排列
-        std::sort(u_nodes.begin(), u_nodes.end(), [&state](int a, int b)
-                  {
-        if (state.Phi_U[a] == state.Phi_U[b]) {
-            return a < b; // 保证稳定排序
-        }
-        return state.Phi_U[a] > state.Phi_U[b]; });
+        // 预计算度数
+        std::vector<int> deg_U;
+        std::vector<int> deg_V;
 
-        // 3. 对 V 集合的断裂节点，按照 Phi_V 从大到小降序排列
-        std::sort(v_nodes.begin(), v_nodes.end(), [&state](int a, int b)
-                  {
-        if (state.Phi_V[a] == state.Phi_V[b]) {
-            return a < b; // 保证稳定排序
+        if (current_metric == Metric::PhiPerDegree)
+        {
+            deg_U.assign(state.num_u, 0);
+            deg_V.assign(state.num_v, 0);
+
+            // 统计存活边的度数
+            for (const auto &edge : state.Edges)
+            {
+                deg_U[edge.u]++;
+                deg_V[edge.v]++;
+            }
+            // // 统计断裂边的度数 (重连前后总度数守恒)
+            // for (const auto &edge : broken_edges)
+            // {
+            //     deg_U[edge.u]++;
+            //     deg_V[edge.v]++;
+            // }
         }
-        return state.Phi_V[a] > state.Phi_V[b]; });
+
+        // 对 U 集合排序
+        std::sort(u_nodes.begin(), u_nodes.end(), [&state, &deg_U, this](int a, int b)
+                  {
+        if (current_metric == Metric::AbsolutePhi) {
+            if (state.Phi_U[a] == state.Phi_U[b]) return a < b;
+            return state.Phi_U[a] > state.Phi_U[b];
+        } else {
+            // 比较 Phi_a / (k_a + 1) > Phi_b / (k_b + 1)
+            // 转为乘法：Phi_a * (k_b + 1) > Phi_b * (k_a + 1)
+            // 使用 long long 防止乘法溢出
+            long long val_a = static_cast<long long>(state.Phi_U[a]) * (deg_U[b] + 1);
+            long long val_b = static_cast<long long>(state.Phi_U[b]) * (deg_U[a] + 1);
+            
+            if (val_a == val_b) return a < b;
+            return val_a > val_b;
+        } });
+
+        // 对 V 集合排序
+        std::sort(v_nodes.begin(), v_nodes.end(), [&state, &deg_V, this](int a, int b)
+                  {
+        if (current_metric == Metric::AbsolutePhi) {
+            if (state.Phi_V[a] == state.Phi_V[b]) return a < b;
+            return state.Phi_V[a] > state.Phi_V[b];
+        } else {
+            long long val_a = static_cast<long long>(state.Phi_V[a]) * (deg_V[b] + 1);
+            long long val_b = static_cast<long long>(state.Phi_V[b]) * (deg_V[a] + 1);
+            
+            if (val_a == val_b) return a < b;
+            return val_a > val_b;
+        } });
 
         // 4. 根据当前模式进行连边
         size_t num_broken = broken_edges.size();

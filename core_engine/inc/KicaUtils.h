@@ -10,6 +10,8 @@
 #include <numeric>
 #include <algorithm>
 
+#include <nlohmann/json.hpp>
+
 namespace KiCA
 {
 
@@ -40,4 +42,11 @@ namespace KiCA
             int seed = 42);
     };
 
+    NLOHMANN_JSON_SERIALIZE_ENUM(KiCA::PhiDistribution, {{KiCA::PhiDistribution::Normal, "Normal"},
+                                                         {KiCA::PhiDistribution::Gamma, "Gamma"},
+                                                         {KiCA::PhiDistribution::MaxwellBoltzmann, "MaxwellBoltzmann"},
+                                                         {KiCA::PhiDistribution::Exponential, "Exponential"}})
+
+    NLOHMANN_JSON_SERIALIZE_ENUM(KiCA::EdgeMode, {{KiCA::EdgeMode::Random, "Random"},
+                                                  {KiCA::EdgeMode::PerfectMatching, "PerfectMatching"}})
 }

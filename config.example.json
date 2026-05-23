@@ -1,0 +1,19 @@
+{
+    "system": {
+        "num_v": 10000000,
+        "delta": 1000000,
+        "num_steps": 50
+    },
+    "initial_state": {
+        "distribution": "Exponential",
+        "edge_mode": "PerfectMatching",
+        "param1": 10000,
+        "param2": 0.1,
+        "seed": 43
+    },
+    "rewire_strategy": {
+        "type": "Random" ,
+        "mode": "Ordered",
+        "metric": "PhiPerDegree"
+    }
+}   

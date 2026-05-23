@@ -26,6 +26,7 @@ add_subdirectory(graph_utils)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test_main.cpp")
     add_executable(kica_test test_main.cpp)
     
+    target_include_directories(kica_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty)
     # 链接图工具库 (由于 PUBLIC 属性，kica_core 会被自动链接)
     target_link_libraries(kica_test PRIVATE graph_utils)
 endif()
