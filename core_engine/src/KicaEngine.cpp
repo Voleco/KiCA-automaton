@@ -95,9 +95,14 @@ namespace KiCA
         std::vector<Edge> surviving_edges;
         std::vector<Edge> broken_edges;
 
-        // 同样为二分图拆分重连节点记录
-        std::unordered_set<int> rewired_nodes_u;
-        std::unordered_set<int> rewired_nodes_v;
+        // 当 timer 存在时，才分配并清零标记数组
+        std::vector<uint8_t> rewired_nodes_u;
+        std::vector<uint8_t> rewired_nodes_v;
+        if (timer != nullptr)
+        {
+            rewired_nodes_u.assign(state.num_u, 0);
+            rewired_nodes_v.assign(state.num_v, 0);
+        }
 
         // 预分配内存，避免 vector 动态扩容开销
         surviving_edges.reserve(state.Edges.size());
@@ -106,22 +111,25 @@ namespace KiCA
         {
             for (const auto &edge : state.Edges)
             {
-                bool transferred = (state.Phi_U[edge.u] >= state.Phi_V[edge.v]);
+                // 没有转移 -- 无事发生
+                if (state.Phi_U[edge.u] < state.Phi_V[edge.v])
+                {
+                    surviving_edges.push_back(edge);
+                    continue;
+                }
 
-                int n1 = Degree_Snapshot_U[edge.u];
-                int n2 = Degree_Snapshot_V[edge.v];
-                int threshold = calculate_threshold(n1, n2);
+                int threshold = calculate_threshold(Degree_Snapshot_U[edge.u], Degree_Snapshot_V[edge.v]);
 
                 // 使用引擎内部的 Phi_tilde
                 bool frustrated = (Phi_tilde_V[edge.v] - Phi_tilde_U[edge.u] >= threshold);
 
-                if (transferred && frustrated)
+                if (frustrated)
                 {
                     broken_edges.push_back(edge);
                     if (timer != nullptr)
                     {
-                        rewired_nodes_u.insert(edge.u);
-                        rewired_nodes_v.insert(edge.v);
+                        rewired_nodes_u[edge.u] = 1;
+                        rewired_nodes_v[edge.v] = 1;
                     }
                 }
                 else
@@ -134,21 +142,23 @@ namespace KiCA
         {
             for (const auto &edge : state.Edges)
             {
-                bool transferred = (state.Phi_V[edge.v] >= state.Phi_U[edge.u]);
+                if (state.Phi_V[edge.v] < state.Phi_U[edge.u])
+                {
+                    surviving_edges.push_back(edge);
+                    continue;
+                }
+                int threshold = calculate_threshold(Degree_Snapshot_V[edge.v], Degree_Snapshot_U[edge.u]);
 
-                int n1 = Degree_Snapshot_V[edge.v];
-                int n2 = Degree_Snapshot_U[edge.u];
-                int threshold = calculate_threshold(n1, n2);
                 // 使用引擎内部的 Phi_tilde
                 bool frustrated = (Phi_tilde_U[edge.u] - Phi_tilde_V[edge.v] >= threshold);
 
-                if (transferred && frustrated)
+                if (frustrated)
                 {
                     broken_edges.push_back(edge);
                     if (timer != nullptr)
                     {
-                        rewired_nodes_u.insert(edge.u);
-                        rewired_nodes_v.insert(edge.v);
+                        rewired_nodes_u[edge.u] = 1;
+                        rewired_nodes_v[edge.v] = 1;
                     }
                 }
                 else
@@ -176,26 +186,19 @@ namespace KiCA
         // ---------------------------------------------------------
         if (timer != nullptr)
         {
-            for (int i = 0; i < state.num_u; ++i)
+            auto update_proper_time = [](int num_nodes, const std::vector<int> &delta,
+                                         const std::vector<uint8_t> &rewired_nodes,
+                                         std::vector<int> &proper_time)
             {
-                bool state_event = (Delta_U[i] != 0);
-                bool topo_event = (rewired_nodes_u.find(i) != rewired_nodes_u.end());
-
-                if (state_event || topo_event)
+                for (int i = 0; i < num_nodes; ++i)
                 {
-                    timer->ProperTime_U[i] += 1;
+                    if (delta[i] != 0 || rewired_nodes[i])
+                        proper_time[i] += 1;
                 }
-            }
-            for (int i = 0; i < state.num_v; ++i)
-            {
-                bool state_event = (Delta_V[i] != 0);
-                bool topo_event = (rewired_nodes_v.find(i) != rewired_nodes_v.end());
+            };
 
-                if (state_event || topo_event)
-                {
-                    timer->ProperTime_V[i] += 1;
-                }
-            }
+            update_proper_time(state.num_u, Delta_U, rewired_nodes_u, timer->ProperTime_U);
+            update_proper_time(state.num_v, Delta_V, rewired_nodes_v, timer->ProperTime_V);
         }
 
         // ---------------------------------------------------------
