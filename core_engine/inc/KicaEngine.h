@@ -30,6 +30,9 @@ namespace KiCA
         std::vector<int> Delta_V;
         std::vector<int> Phi_tilde_U;
         std::vector<int> Phi_tilde_V;
+
+        std::vector<int> Degree_Snapshot_U;
+        std::vector<int> Degree_Snapshot_V;
     };
 
 }

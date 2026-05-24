@@ -35,12 +35,15 @@
 *   **操作**：将缓存区的数据一次性结算，生成中间态 `Phi_tilde`。
 *   **逻辑**：遍历所有节点 `v`，执行 `Phi_tilde[v] = Phi[v] + Delta[v]`。
 
-### (4) 检测阶段 (Frustration Detection)
-*   **操作**：对比旧态 `Phi` 与中间态 `Phi_tilde`，找出发生“因果阻挫”的边，并将其从网络中剥离。
+### (4) 检测阶段 (Frustration Detection with Degree Threshold)
+*   **操作**：对比旧态 `Phi` 与中间态 `Phi_tilde`，并结合节点的**拓扑度数**，找出发生“因果阻挫”的边，将其从网络中剥离。
 *   **逻辑**：
     1.  初始化一个空列表 `Broken_Edges = []`。
-    2.  再次遍历 `Edges` 中的每一条边 `e = (Source, Target)`：
-        *   **阻挫判定**：如果该边在阶段(2)中**发生了转移**（即 `Phi[Source] >= Phi[Target]`），并且在结算后**关系反转**（即 `Phi_tilde[Source] < Phi_tilde[Target]`）。
+    2.  遍历 `Edges` 中的每一条边 `e = (Source, Target)`：
+        *   获取当前边两端节点在当前拓扑下的度数：设 `n1 = Degree[Source]`, `n2 = Degree[Target]`。
+        *   计算该边对应的**断裂阈值** \(E(n_1, n_2)\)（*注：具体函数形式由模型参数设定，如 \(E = f(n_1, n_2)\)*）。
+        *   **阻挫判定**：如果该边在阶段(2)中**发生了转移**（即 `Phi[Source] >= Phi[Target]`），并且在结算后，反向的势差超过了系统的拓扑容忍度，即满足：
+            \[ \tilde{\Phi}[\text{Target}] - \tilde{\Phi}[\text{Source}] \ge E(n_1, n_2) \]
         *   **剥离**：将该边加入 `Broken_Edges` 列表，并从 `Edges` 集合中删除。
 
 ### (5) 重新匹配阶段 (Topological Rewiring)

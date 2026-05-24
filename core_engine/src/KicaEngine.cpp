@@ -20,6 +20,9 @@ namespace KiCA
         Delta_V.resize(num_v, 0);
         Phi_tilde_U.resize(num_u, 0);
         Phi_tilde_V.resize(num_v, 0);
+
+        Degree_Snapshot_U.resize(num_u, 0);
+        Degree_Snapshot_V.resize(num_v, 0);
     }
 
     void KicaEngine::setRewireStrategy(std::shared_ptr<IRewireStrategy> strategy)
@@ -31,6 +34,11 @@ namespace KiCA
         rewire_strategy = std::move(strategy);
     }
 
+    inline int calculate_threshold(int n1, int n2)
+    {
+        return n1 + n2;
+    }
+
     void KicaEngine::step(KicaState &state, KicaTimer *timer)
     {
         // 此处不做安全检查。如果传入的 state 尺寸与 Engine 预分配的不符，那就爆炸吧
@@ -40,10 +48,15 @@ namespace KiCA
         std::fill(Delta_U.begin(), Delta_U.begin() + state.num_u, 0);
         std::fill(Delta_V.begin(), Delta_V.begin() + state.num_v, 0);
 
+        std::fill(Degree_Snapshot_U.begin(), Degree_Snapshot_U.begin() + state.num_u, 0);
+        std::fill(Degree_Snapshot_V.begin(), Degree_Snapshot_V.begin() + state.num_v, 0);
+
         if (state.tau == 0) // 节拍 0：因果势从 U 流向 V
         {
             for (const auto &edge : state.Edges)
             {
+                Degree_Snapshot_U[edge.u] += 1;
+                Degree_Snapshot_V[edge.v] += 1;
                 if (state.Phi_U[edge.u] >= state.Phi_V[edge.v])
                 {
                     Delta_U[edge.u] -= 1;
@@ -55,6 +68,8 @@ namespace KiCA
         {
             for (const auto &edge : state.Edges)
             {
+                Degree_Snapshot_V[edge.v] += 1;
+                Degree_Snapshot_U[edge.u] += 1;
                 if (state.Phi_V[edge.v] >= state.Phi_U[edge.u])
                 {
                     Delta_V[edge.v] -= 1;
@@ -92,10 +107,15 @@ namespace KiCA
             for (const auto &edge : state.Edges)
             {
                 bool transferred = (state.Phi_U[edge.u] >= state.Phi_V[edge.v]);
-                // 使用引擎内部的 Phi_tilde
-                bool reversed = (Phi_tilde_U[edge.u] < Phi_tilde_V[edge.v]);
 
-                if (transferred && reversed)
+                int n1 = Degree_Snapshot_U[edge.u];
+                int n2 = Degree_Snapshot_V[edge.v];
+                int threshold = calculate_threshold(n1, n2);
+
+                // 使用引擎内部的 Phi_tilde
+                bool frustrated = (Phi_tilde_V[edge.v] - Phi_tilde_U[edge.u] >= threshold);
+
+                if (transferred && frustrated)
                 {
                     broken_edges.push_back(edge);
                     if (timer != nullptr)
@@ -115,10 +135,14 @@ namespace KiCA
             for (const auto &edge : state.Edges)
             {
                 bool transferred = (state.Phi_V[edge.v] >= state.Phi_U[edge.u]);
-                // 使用引擎内部的 Phi_tilde
-                bool reversed = (Phi_tilde_V[edge.v] < Phi_tilde_U[edge.u]);
 
-                if (transferred && reversed)
+                int n1 = Degree_Snapshot_V[edge.v];
+                int n2 = Degree_Snapshot_U[edge.u];
+                int threshold = calculate_threshold(n1, n2);
+                // 使用引擎内部的 Phi_tilde
+                bool frustrated = (Phi_tilde_U[edge.u] - Phi_tilde_V[edge.v] >= threshold);
+
+                if (transferred && frustrated)
                 {
                     broken_edges.push_back(edge);
                     if (timer != nullptr)
